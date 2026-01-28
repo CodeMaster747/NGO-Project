@@ -3,7 +3,6 @@ import '../models/user_progress.dart';
 import '../services/storage_service.dart';
 import '../widgets/points_display.dart';
 import '../widgets/level_badge.dart';
-import '../widgets/eco_button.dart';
 import '../utils/theme.dart';
 import 'gamification_screen.dart';
 import 'learning_screen.dart';
@@ -53,10 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('EcoKids'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('EcoKids'), centerTitle: true),
       body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -65,18 +61,12 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: AppTheme.primaryGreen,
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.emoji_events),
             label: 'Progress',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'Learn',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learn'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
@@ -230,10 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Your Impact',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Your Impact', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -276,10 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
         ),
       ],
     );

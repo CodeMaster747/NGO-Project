@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/waste_result.dart';
-import '../../models/user_progress.dart';
 import '../../services/storage_service.dart';
 import '../../services/gamification_service.dart';
 import '../../utils/theme.dart';
@@ -28,7 +27,7 @@ class _WasteResultScreenState extends State<WasteResultScreen>
     with SingleTickerProviderStateMixin {
   final StorageService _storage = StorageService();
   final GamificationService _gamification = GamificationService();
-  
+
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   List<String> _newBadges = [];
@@ -36,15 +35,16 @@ class _WasteResultScreenState extends State<WasteResultScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Setup animation
     _controller = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
     _controller.forward();
 
     // Award points and save progress
@@ -109,9 +109,7 @@ class _WasteResultScreenState extends State<WasteResultScreen>
     final wasteIcon = AppTheme.getWasteIcon(widget.result.category);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan Result'),
-      ),
+      appBar: AppBar(title: const Text('Scan Result')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -216,7 +214,10 @@ class _WasteResultScreenState extends State<WasteResultScreen>
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.lightbulb, color: AppTheme.accentOrange),
+                          const Icon(
+                            Icons.lightbulb,
+                            color: AppTheme.accentOrange,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Eco Tip',
@@ -274,10 +275,8 @@ class _WasteResultScreenState extends State<WasteResultScreen>
                 text: 'Back to Home',
                 icon: Icons.home,
                 backgroundColor: AppTheme.secondaryGreen,
-                onPressed: () => Navigator.popUntil(
-                  context,
-                  (route) => route.isFirst,
-                ),
+                onPressed: () =>
+                    Navigator.popUntil(context, (route) => route.isFirst),
               ),
             ],
           ),

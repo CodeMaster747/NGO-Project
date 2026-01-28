@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../utils/theme.dart';
 import '../../widgets/eco_button.dart';
 import '../../services/ml/waste_classifier.dart';
-import '../../models/waste_result.dart';
 import 'waste_result_screen.dart';
 
 /// Screen for capturing/selecting waste images
@@ -18,7 +17,7 @@ class WasteScanScreen extends StatefulWidget {
 class _WasteScanScreenState extends State<WasteScanScreen> {
   final ImagePicker _picker = ImagePicker();
   final WasteClassifier _classifier = WasteClassifier();
-  
+
   XFile? _imageFile;
   bool _isAnalyzing = false;
 
@@ -38,9 +37,9 @@ class _WasteScanScreenState extends State<WasteScanScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error capturing image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error capturing image: $e')));
       }
     }
   }
@@ -64,18 +63,16 @@ class _WasteScanScreenState extends State<WasteScanScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => WasteResultScreen(
-              result: result,
-              imageFile: _imageFile!,
-            ),
+            builder: (context) =>
+                WasteResultScreen(result: result, imageFile: _imageFile!),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error analyzing waste: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error analyzing waste: $e')));
       }
     } finally {
       setState(() {
@@ -87,9 +84,7 @@ class _WasteScanScreenState extends State<WasteScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan Waste'),
-      ),
+      appBar: AppBar(title: const Text('Scan Waste')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -212,9 +207,7 @@ class _WasteScanScreenState extends State<WasteScanScreen> {
               if (_isAnalyzing)
                 const Padding(
                   padding: EdgeInsets.all(20.0),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
             ],
           ),

@@ -6,7 +6,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../utils/theme.dart';
 import '../../widgets/eco_button.dart';
 import '../../services/ml/soil_classifier.dart';
-import '../../models/soil_result.dart';
 import 'plant_recommendation_screen.dart';
 
 /// Screen for capturing soil images and getting GPS location
@@ -20,7 +19,7 @@ class SoilCaptureScreen extends StatefulWidget {
 class _SoilCaptureScreenState extends State<SoilCaptureScreen> {
   final ImagePicker _picker = ImagePicker();
   final SoilClassifier _classifier = SoilClassifier();
-  
+
   XFile? _imageFile;
   Position? _position;
   String? _locationName;
@@ -65,14 +64,15 @@ class _SoilCaptureScreenState extends State<SoilCaptureScreen> {
 
       // Simple location name (in production, use geocoding service)
       setState(() {
-        _locationName = 'Lat: ${_position!.latitude.toStringAsFixed(2)}, '
+        _locationName =
+            'Lat: ${_position!.latitude.toStringAsFixed(2)}, '
             'Lon: ${_position!.longitude.toStringAsFixed(2)}';
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not get location: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not get location: $e')));
       }
       setState(() {
         _locationName = 'Location unavailable';
@@ -100,9 +100,9 @@ class _SoilCaptureScreenState extends State<SoilCaptureScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error capturing image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error capturing image: $e')));
       }
     }
   }
@@ -137,9 +137,9 @@ class _SoilCaptureScreenState extends State<SoilCaptureScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error analyzing soil: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error analyzing soil: $e')));
       }
     } finally {
       setState(() {
@@ -151,9 +151,7 @@ class _SoilCaptureScreenState extends State<SoilCaptureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Soil Analysis'),
-      ),
+      appBar: AppBar(title: const Text('Soil Analysis')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -311,9 +309,7 @@ class _SoilCaptureScreenState extends State<SoilCaptureScreen> {
               if (_isAnalyzing)
                 const Padding(
                   padding: EdgeInsets.all(20.0),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
             ],
           ),

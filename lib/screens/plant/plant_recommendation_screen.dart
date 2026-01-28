@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/soil_result.dart';
 import '../../models/plant.dart';
-import '../../models/user_progress.dart';
 import '../../services/storage_service.dart';
 import '../../services/gamification_service.dart';
 import '../../services/recommendation_engine.dart';
@@ -32,7 +31,7 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
   final StorageService _storage = StorageService();
   final GamificationService _gamification = GamificationService();
   final RecommendationEngine _recommendationEngine = RecommendationEngine();
-  
+
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   List<Plant> _recommendations = [];
@@ -41,15 +40,16 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Setup animation
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
     _controller.forward();
 
     // Get recommendations and award points
@@ -58,7 +58,9 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
   }
 
   void _getRecommendations() {
-    _recommendations = _recommendationEngine.getRecommendations(widget.soilResult);
+    _recommendations = _recommendationEngine.getRecommendations(
+      widget.soilResult,
+    );
   }
 
   Future<void> _awardPoints() async {
@@ -112,9 +114,7 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Plant Recommendations'),
-      ),
+      appBar: AppBar(title: const Text('Plant Recommendations')),
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SingleChildScrollView(
@@ -154,7 +154,11 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
-                        const Icon(Icons.terrain, size: 50, color: Colors.white),
+                        const Icon(
+                          Icons.terrain,
+                          size: 50,
+                          color: Colors.white,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           '${widget.soilResult.soilType} Soil',
@@ -169,8 +173,11 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.location_on,
-                                  color: Colors.white, size: 16),
+                              const Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                                size: 16,
+                              ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
@@ -242,10 +249,8 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
                   text: 'Back to Home',
                   icon: Icons.home,
                   backgroundColor: AppTheme.primaryGreen,
-                  onPressed: () => Navigator.popUntil(
-                    context,
-                    (route) => route.isFirst,
-                  ),
+                  onPressed: () =>
+                      Navigator.popUntil(context, (route) => route.isFirst),
                 ),
               ],
             ),

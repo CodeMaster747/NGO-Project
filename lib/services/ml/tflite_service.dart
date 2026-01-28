@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import '../../utils/constants.dart';
 
@@ -57,7 +55,7 @@ class TFLiteService {
       // In production, load the actual TFLite model here
       // Example with tflite_flutter:
       // _interpreter = await Interpreter.fromAsset(AppConstants.wasteModelPath);
-      
+
       _isWasteModelLoaded = true;
       print('Waste model loaded successfully');
       return true;
@@ -84,7 +82,7 @@ class TFLiteService {
       }
 
       // In production, load the actual TFLite model here
-      
+
       _isSoilModelLoaded = true;
       print('Soil model loaded successfully');
       return true;
