@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import '../../utils/theme.dart';
 import '../../widgets/eco_button.dart';
@@ -137,10 +138,15 @@ class _WasteScanScreenState extends State<WasteScanScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      File(_imageFile!.path),
-                      fit: BoxFit.cover,
-                    ),
+                    child: kIsWeb
+                        ? Image.network(
+                            _imageFile!.path,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.file(
+                            File(_imageFile!.path),
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 )
               else

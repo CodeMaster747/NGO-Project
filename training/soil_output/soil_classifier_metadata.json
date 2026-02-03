@@ -1,0 +1,42 @@
+{
+  "model_name": "soil_classifier",
+  "architecture": "Custom Depthwise-Separable CNN + Texture Feature Fusion",
+  "input_size": 224,
+  "num_classes": 7,
+  "classes": {
+    "0": "Alluvial_Soil",
+    "1": "Arid_Soil",
+    "2": "Black_Soil",
+    "3": "Laterite_Soil",
+    "4": "Mountain_Soil",
+    "5": "Red_Soil",
+    "6": "Yellow_Soil"
+  },
+  "texture_feature_size": 98,
+  "training_samples": 4752,
+  "validation_samples": 1188,
+  "total_params": 390129,
+  "model_size_mb": 0.42474365234375,
+  "final_accuracy": 0.18434342741966248,
+  "final_top3_accuracy": 0.4654882252216339,
+  "epochs_trained": 16,
+  "glcm_params": {
+    "distances": [
+      1,
+      2,
+      3
+    ],
+    "properties": [
+      "contrast",
+      "dissimilarity",
+      "homogeneity",
+      "energy",
+      "correlation",
+      "ASM"
+    ]
+  },
+  "lbp_params": {
+    "radius": 3,
+    "n_points": 24
+  }
+}

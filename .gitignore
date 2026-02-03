@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Datasets
+datasets/
+
+# Python Training
+training/venv/
+training/__pycache__/
+*.h5
