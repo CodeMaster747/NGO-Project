@@ -37,6 +37,7 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
   late Animation<double> _fadeAnimation;
   List<Plant> _recommendations = [];
   List<String> _newBadges = [];
+  bool _isLoadingRecommendations = true;
 
   @override
   void initState() {
@@ -58,10 +59,16 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
     _awardPoints();
   }
 
-  void _getRecommendations() {
-    _recommendations = _recommendationEngine.getRecommendations(
-      widget.soilResult,
-    );
+  Future<void> _getRecommendations() async {
+    setState(() {
+      _isLoadingRecommendations = true;
+    });
+    final recs = await _recommendationEngine.getRecommendations(widget.soilResult);
+    if (!mounted) return;
+    setState(() {
+      _recommendations = recs;
+      _isLoadingRecommendations = false;
+    });
   }
 
   Future<void> _awardPoints() async {
@@ -167,11 +174,19 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '${widget.soilResult.soilType} Soil',
+                          widget.soilResult.soilType.replaceAll('_', ' '),
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Confidence: ${(widget.soilResult.confidence * 100).toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -211,7 +226,15 @@ class _PlantRecommendationScreenState extends State<PlantRecommendationScreen>
                 const SizedBox(height: 16),
 
                 // Plant Recommendations
-                ..._recommendations.map((plant) => _buildPlantCard(plant)),
+                if (_isLoadingRecommendations)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else
+                  ..._recommendations.map((plant) => _buildPlantCard(plant)),
 
                 const SizedBox(height: 20),
 

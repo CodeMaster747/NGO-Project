@@ -1,6 +1,6 @@
 {
   "model_name": "soil_classifier",
-  "architecture": "Custom Depthwise-Separable CNN + Texture Feature Fusion",
+  "architecture": "efficientnetv2b0 + Texture Feature Fusion",
   "input_size": 224,
   "num_classes": 7,
   "classes": {
@@ -13,13 +13,17 @@
     "6": "Yellow_Soil"
   },
   "texture_feature_size": 98,
-  "training_samples": 950,
-  "validation_samples": 238,
-  "total_params": 390129,
-  "model_size_mb": 0.42474365234375,
-  "final_accuracy": 0.16806723177433014,
-  "final_top3_accuracy": 0.5546218752861023,
-  "epochs_trained": 20,
+  "training_samples": 1662,
+  "validation_samples": 178,
+  "total_params": 6320151,
+  "model_size_mb": 6.6771392822265625,
+  "final_accuracy": 0.8707864880561829,
+  "final_top3_accuracy": 0.9719101190567017,
+  "epochs_trained": 39,
+  "test_accuracy": 0.8603351955307262,
+  "label_smoothing": 0.03,
+  "class_weights": true,
+  "use_texture_features": true,
   "glcm_params": {
     "distances": [
       1,

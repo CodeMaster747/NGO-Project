@@ -10,7 +10,7 @@ class ImagePreprocessor {
   ImagePreprocessor._internal();
 
   /// Preprocess image for MobileNetV2 model
-  /// Resizes to 224x224 and normalizes pixel values to 0-1 range
+  /// Resizes to 224x224 and converts to float RGB tensor
   Future<List<List<List<List<double>>>>> preprocessImage(
     Uint8List imageBytes,
     int inputSize,
@@ -29,8 +29,8 @@ class ImagePreprocessor {
         height: inputSize,
       );
 
-      // Convert to normalized tensor format [1, 224, 224, 3]
-      // MobileNetV2 expects RGB values normalized to 0-1
+      // Convert to tensor format [1, 224, 224, 3]
+      // Model-specific normalization (e.g., Rescaling or preprocess_input) is handled inside the TFLite graph.
       List<List<List<List<double>>>> input = List.generate(
         1, // Batch size
         (b) => List.generate(
@@ -40,9 +40,9 @@ class ImagePreprocessor {
             (x) {
               final pixel = resized.getPixel(x, y);
               return [
-                pixel.r / 255.0, // Red channel normalized
-                pixel.g / 255.0, // Green channel normalized
-                pixel.b / 255.0, // Blue channel normalized
+                pixel.r.toDouble(),
+                pixel.g.toDouble(),
+                pixel.b.toDouble(),
               ];
             },
           ),

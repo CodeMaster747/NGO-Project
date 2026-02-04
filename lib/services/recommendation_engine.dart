@@ -1,6 +1,8 @@
 import '../models/plant.dart';
 import '../models/soil_result.dart';
 import '../utils/constants.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 /// Rule-based engine for recommending plants based on soil type and location
 /// Combines ML soil classification with GPS location to suggest suitable plants
@@ -114,11 +116,11 @@ class RecommendationEngine {
 
   /// Get plant recommendations based on soil type and location
   /// Returns 2-4 suitable plants
-  List<Plant> getRecommendations(SoilResult soilResult) {
+  Future<List<Plant>> getRecommendations(SoilResult soilResult) async {
     List<Plant> recommendations = [];
-    
-    // Filter plants by soil type
-    final suitablePlants = _plantDatabase.where((plant) {
+    final externalPlants = await _loadExternalPlants();
+    final activeDatabase = externalPlants.isNotEmpty ? externalPlants : _plantDatabase;
+    final suitablePlants = activeDatabase.where((plant) {
       return plant.suitableSoilTypes.contains(soilResult.soilType);
     }).toList();
     
@@ -152,6 +154,37 @@ class RecommendationEngine {
     }
     
     return recommendations;
+  }
+
+  List<Plant>? _cachedExternalPlants;
+  Future<List<Plant>> _loadExternalPlants() async {
+    final cached = _cachedExternalPlants;
+    if (cached != null) return cached;
+
+    try {
+      final jsonString =
+          await rootBundle.loadString('assets/data/plants_by_soil_7_classes.json');
+      final decoded = json.decode(jsonString);
+      if (decoded is! Map) {
+        _cachedExternalPlants = <Plant>[];
+        return _cachedExternalPlants!;
+      }
+
+      final plantsJson = decoded['plants'];
+      if (plantsJson is! List) {
+        _cachedExternalPlants = <Plant>[];
+        return _cachedExternalPlants!;
+      }
+
+      _cachedExternalPlants = plantsJson
+          .whereType<Map<String, dynamic>>()
+          .map((e) => Plant.fromJson(e))
+          .toList();
+      return _cachedExternalPlants!;
+    } catch (_) {
+      _cachedExternalPlants = <Plant>[];
+      return _cachedExternalPlants!;
+    }
   }
 
   /// Simple region detection based on location string

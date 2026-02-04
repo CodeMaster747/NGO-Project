@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "soil_classes": [
+    "Alluvial_Soil",
+    "Arid_Soil",
+    "Black_Soil",
+    "Laterite_Soil",
+    "Mountain_Soil",
+    "Red_Soil",
+    "Yellow_Soil"
+  ],
+  "plants": [
+    {
+      "name": "Rice",
+      "description": "A staple cereal crop that grows well in fertile river plains.",
+      "plantingTips": "Keep soil consistently moist during early growth; transplant seedlings after 20–25 days.",
+      "suitableSoilTypes": ["Alluvial_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Wheat",
+      "description": "A cool-season cereal crop commonly grown on fertile plains.",
+      "plantingTips": "Sow in well-prepared soil; irrigate at crown-root initiation and flowering stages.",
+      "suitableSoilTypes": ["Alluvial_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Sugarcane",
+      "description": "A high-biomass crop that prefers deep, fertile soils.",
+      "plantingTips": "Plant setts in furrows; maintain regular irrigation and apply organic manure.",
+      "suitableSoilTypes": ["Alluvial_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Maize",
+      "description": "A versatile cereal that performs well in fertile, well-drained soils.",
+      "plantingTips": "Sow at proper spacing; avoid waterlogging and provide balanced NPK fertilization.",
+      "suitableSoilTypes": ["Alluvial_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Pulses (Lentil/Chickpea)",
+      "description": "Protein-rich legumes that fit well in crop rotations on plains.",
+      "plantingTips": "Sow in cooler months; inoculate seed with Rhizobium for better nodulation.",
+      "suitableSoilTypes": ["Alluvial_Soil"],
+      "suitableRegions": ["All"]
+    },
+
+    {
+      "name": "Pearl Millet (Bajra)",
+      "description": "A hardy cereal suited to low-rainfall regions.",
+      "plantingTips": "Sow with the first rains; use wider spacing and conserve soil moisture.",
+      "suitableSoilTypes": ["Arid_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Cluster Bean (Guar)",
+      "description": "A drought-tolerant legume crop grown in dry areas.",
+      "plantingTips": "Sow at onset of monsoon; avoid excess irrigation and ensure good drainage.",
+      "suitableSoilTypes": ["Arid_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Barley",
+      "description": "A resilient cereal that can tolerate relatively poor moisture conditions.",
+      "plantingTips": "Sow in cool season; irrigate lightly if needed and avoid waterlogging.",
+      "suitableSoilTypes": ["Arid_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Moth Bean",
+      "description": "A drought-resistant pulse suitable for arid climates.",
+      "plantingTips": "Sow after first effective rains; use shallow sowing and minimum tillage where possible.",
+      "suitableSoilTypes": ["Arid_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Sesame",
+      "description": "An oilseed crop that can perform under low rainfall with good drainage.",
+      "plantingTips": "Avoid waterlogging; sow on ridges in heavier soils and keep field weed-free early.",
+      "suitableSoilTypes": ["Arid_Soil"],
+      "suitableRegions": ["All"]
+    },
+
+    {
+      "name": "Cotton",
+      "description": "A major fiber crop well known for thriving in moisture-retentive soils.",
+      "plantingTips": "Use proper spacing for airflow; manage pests and avoid prolonged standing water.",
+      "suitableSoilTypes": ["Black_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Soybean",
+      "description": "An important oilseed and protein crop for fertile, moisture-holding soils.",
+      "plantingTips": "Sow with monsoon onset; ensure good seed inoculation and timely weeding.",
+      "suitableSoilTypes": ["Black_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Sorghum (Jowar)",
+      "description": "A drought-tolerant cereal often grown in heavy soils.",
+      "plantingTips": "Sow after first rains; maintain plant population and manage shoot fly early.",
+      "suitableSoilTypes": ["Black_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Pigeon Pea (Tur)",
+      "description": "A deep-rooted pulse crop that fits well in rainfed farming.",
+      "plantingTips": "Sow at wider spacing; avoid waterlogging and provide staking support if needed.",
+      "suitableSoilTypes": ["Black_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Groundnut (Peanut)",
+      "description": "An oilseed crop that can be grown in well-drained black soils with good management.",
+      "plantingTips": "Ensure loose topsoil for pod development; avoid excess nitrogen and keep weeds low.",
+      "suitableSoilTypes": ["Black_Soil"],
+      "suitableRegions": ["All"]
+    },
+
+    {
+      "name": "Cashew",
+      "description": "A hardy tree crop commonly grown in laterite-dominated coastal regions.",
+      "plantingTips": "Plant on slopes with drainage; mulch to conserve moisture during dry periods.",
+      "suitableSoilTypes": ["Laterite_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Tea",
+      "description": "A plantation crop typically grown in humid hill tracts and certain laterite regions.",
+      "plantingTips": "Maintain acidic, well-drained soil; prune regularly and mulch with organic matter.",
+      "suitableSoilTypes": ["Laterite_Soil", "Mountain_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Coffee",
+      "description": "A plantation crop that prefers well-drained soils and partial shade.",
+      "plantingTips": "Grow under shade trees; maintain mulching and avoid standing water near roots.",
+      "suitableSoilTypes": ["Laterite_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Rubber",
+      "description": "A plantation crop grown in warm, humid climates with good drainage.",
+      "plantingTips": "Plant in pits enriched with compost; keep the base weed-free and mulch well.",
+      "suitableSoilTypes": ["Laterite_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Coconut",
+      "description": "A coastal plantation crop that can grow in well-drained lateritic soils.",
+      "plantingTips": "Provide regular watering in dry months; apply organic manure and ensure drainage.",
+      "suitableSoilTypes": ["Laterite_Soil"],
+      "suitableRegions": ["All"]
+    },
+
+    {
+      "name": "Apple",
+      "description": "A temperate fruit crop grown in cooler hill regions.",
+      "plantingTips": "Plant on slopes with good drainage; prune annually and protect from late frost.",
+      "suitableSoilTypes": ["Mountain_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Potato",
+      "description": "A cool-season tuber crop suitable for well-drained hill soils.",
+      "plantingTips": "Plant seed tubers in ridges; keep soil loose and hill up to protect tubers from light.",
+      "suitableSoilTypes": ["Mountain_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Peas",
+      "description": "A cool-season legume that grows well in many hill tracts.",
+      "plantingTips": "Sow in cool weather; provide light support for climbing varieties.",
+      "suitableSoilTypes": ["Mountain_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Cabbage",
+      "description": "A cool-season vegetable often cultivated in hill regions.",
+      "plantingTips": "Transplant healthy seedlings; keep consistent moisture and watch for caterpillars.",
+      "suitableSoilTypes": ["Mountain_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Strawberry",
+      "description": "A fruit crop suitable for cooler climates with good organic matter.",
+      "plantingTips": "Use mulch to reduce weeds; keep soil evenly moist and avoid wetting flowers too much.",
+      "suitableSoilTypes": ["Mountain_Soil"],
+      "suitableRegions": ["All"]
+    },
+
+    {
+      "name": "Millets (Ragi/Jowar)",
+      "description": "Hardy cereals commonly grown in rainfed regions with lighter soils.",
+      "plantingTips": "Sow with rainfall onset; keep weeds controlled in early growth stages.",
+      "suitableSoilTypes": ["Red_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Pulses (Tur/Gram)",
+      "description": "Legume crops often suited to red soils under rainfed farming.",
+      "plantingTips": "Sow at correct spacing; manage weeds and apply phosphorus as needed.",
+      "suitableSoilTypes": ["Red_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Groundnut (Peanut)",
+      "description": "An oilseed crop frequently grown in red soils with good drainage.",
+      "plantingTips": "Ensure loose topsoil for peg penetration; avoid prolonged moisture stress during flowering.",
+      "suitableSoilTypes": ["Red_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Cotton",
+      "description": "A fiber crop grown in several soil types with proper nutrient management.",
+      "plantingTips": "Maintain spacing and pest monitoring; avoid waterlogging and support with balanced fertilization.",
+      "suitableSoilTypes": ["Red_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Tobacco",
+      "description": "A commercial crop grown in certain red soil belts.",
+      "plantingTips": "Transplant on raised beds; manage irrigation carefully and avoid excess nitrogen.",
+      "suitableSoilTypes": ["Red_Soil"],
+      "suitableRegions": ["All"]
+    },
+
+    {
+      "name": "Maize",
+      "description": "A cereal crop grown widely across climates where drainage is good.",
+      "plantingTips": "Sow at recommended spacing; apply balanced nutrients and avoid waterlogging.",
+      "suitableSoilTypes": ["Yellow_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Groundnut (Peanut)",
+      "description": "An oilseed crop that grows well where soils are well-drained.",
+      "plantingTips": "Provide calcium/gypsum at pegging; keep field weed-free early for best yields.",
+      "suitableSoilTypes": ["Yellow_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Cotton",
+      "description": "A fiber crop that can be grown with good nutrient and water management.",
+      "plantingTips": "Keep soil moisture steady; monitor pests and avoid excessive nitrogen late season.",
+      "suitableSoilTypes": ["Yellow_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Rice",
+      "description": "In suitable climates, rice can be cultivated with adequate water and field preparation.",
+      "plantingTips": "Use puddling and maintain standing water during early stages; drain before harvest.",
+      "suitableSoilTypes": ["Yellow_Soil"],
+      "suitableRegions": ["All"]
+    },
+    {
+      "name": "Banana",
+      "description": "A fruit crop that prefers fertile soils with consistent moisture.",
+      "plantingTips": "Provide regular irrigation; use mulch and wind protection for healthy bunch development.",
+      "suitableSoilTypes": ["Yellow_Soil"],
+      "suitableRegions": ["All"]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import cv2
 from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 import json
 from pathlib import Path
@@ -33,6 +34,12 @@ GLCM_PROPERTIES = ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correl
 # LBP parameters
 LBP_RADIUS = 3
 LBP_N_POINTS = 8 * LBP_RADIUS
+
+
+def canonicalize_class_name(name: str) -> str:
+    cleaned = name.strip().replace('-', '_').replace(' ', '_')
+    cleaned = '_'.join([p for p in cleaned.split('_') if p])
+    return '_'.join([p[:1].upper() + p[1:].lower() if p else p for p in cleaned.split('_')])
 
 
 def extract_glcm_features(image):
@@ -167,6 +174,146 @@ def build_depthwise_separable_cnn(input_shape, texture_feature_size, num_classes
     return model
 
 
+def build_mobilenetv2_fusion(input_shape, texture_feature_size, num_classes, trainable_layers=30):
+    img_input = layers.Input(shape=input_shape, name='image_input')
+    texture_input = layers.Input(shape=(texture_feature_size,), name='texture_input')
+    
+    x = keras.applications.mobilenet_v2.preprocess_input(img_input)
+    backbone = keras.applications.MobileNetV2(
+        input_shape=input_shape,
+        include_top=False,
+        weights='imagenet'
+    )
+    backbone.trainable = True
+    if trainable_layers is not None:
+        for layer in backbone.layers[:-trainable_layers]:
+            layer.trainable = False
+    
+    x = backbone(x)
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dropout(0.35)(x)
+    
+    t = layers.Dense(128, activation='relu')(texture_input)
+    t = layers.BatchNormalization()(t)
+    t = layers.Dropout(0.3)(t)
+    t = layers.Dense(64, activation='relu')(t)
+    t = layers.BatchNormalization()(t)
+    t = layers.Dropout(0.3)(t)
+    
+    combined = layers.concatenate([x, t], name='feature_fusion')
+    combined = layers.Dense(256, activation='relu')(combined)
+    combined = layers.BatchNormalization()(combined)
+    combined = layers.Dropout(0.4)(combined)
+    combined = layers.Dense(128, activation='relu')(combined)
+    combined = layers.Dropout(0.3)(combined)
+    output = layers.Dense(num_classes, activation='softmax', name='classification_output')(combined)
+    
+    return models.Model(inputs=[img_input, texture_input], outputs=output)
+
+
+def build_efficientnetv2b0_fusion(input_shape, texture_feature_size, num_classes, trainable_layers=40):
+    img_input = layers.Input(shape=input_shape, name='image_input')
+    texture_input = layers.Input(shape=(texture_feature_size,), name='texture_input')
+
+    preprocess = keras.applications.efficientnet_v2.preprocess_input
+    x = layers.Lambda(lambda t: preprocess(t), name='preprocess')(img_input)
+
+    backbone = keras.applications.EfficientNetV2B0(
+        input_shape=input_shape,
+        include_top=False,
+        weights='imagenet',
+    )
+    backbone.trainable = True
+    if trainable_layers is not None:
+        for layer in backbone.layers[:-trainable_layers]:
+            layer.trainable = False
+
+    x = backbone(x)
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dropout(0.35)(x)
+
+    t = layers.Dense(128, activation='relu')(texture_input)
+    t = layers.BatchNormalization()(t)
+    t = layers.Dropout(0.3)(t)
+    t = layers.Dense(64, activation='relu')(t)
+    t = layers.BatchNormalization()(t)
+    t = layers.Dropout(0.3)(t)
+
+    combined = layers.concatenate([x, t], name='feature_fusion')
+    combined = layers.Dense(256, activation='relu')(combined)
+    combined = layers.BatchNormalization()(combined)
+    combined = layers.Dropout(0.4)(combined)
+    combined = layers.Dense(128, activation='relu')(combined)
+    combined = layers.Dropout(0.3)(combined)
+    output = layers.Dense(num_classes, activation='softmax', name='classification_output')(combined)
+
+    return models.Model(inputs=[img_input, texture_input], outputs=output)
+
+
+def build_image_only_backbone_classifier(
+    input_shape,
+    num_classes,
+    backbone_name='efficientnetv2b0',
+    trainable_layers=40,
+):
+    img_input = layers.Input(shape=input_shape, name='image_input')
+
+    try:
+        aug = keras.Sequential(
+            [
+                layers.RandomFlip('horizontal'),
+                layers.RandomRotation(0.08),
+                layers.RandomZoom(0.1),
+                layers.RandomContrast(0.1),
+            ],
+            name='augmentation',
+        )
+        x = aug(img_input)
+    except Exception:
+        x = img_input
+
+    backbone = None
+    preprocess = None
+
+    if backbone_name.lower() in ('efficientnetv2b0', 'effnetv2b0') and hasattr(keras.applications, 'EfficientNetV2B0'):
+        preprocess = keras.applications.efficientnet_v2.preprocess_input
+        backbone = keras.applications.EfficientNetV2B0(
+            input_shape=input_shape,
+            include_top=False,
+            weights='imagenet',
+        )
+    elif backbone_name.lower() in ('efficientnetb0', 'effnetb0') and hasattr(keras.applications, 'EfficientNetB0'):
+        preprocess = keras.applications.efficientnet.preprocess_input
+        backbone = keras.applications.EfficientNetB0(
+            input_shape=input_shape,
+            include_top=False,
+            weights='imagenet',
+        )
+    else:
+        preprocess = keras.applications.mobilenet_v2.preprocess_input
+        backbone = keras.applications.MobileNetV2(
+            input_shape=input_shape,
+            include_top=False,
+            weights='imagenet',
+        )
+
+    x = layers.Lambda(lambda t: preprocess(t), name='preprocess')(x)
+
+    backbone.trainable = True
+    if trainable_layers is not None:
+        for layer in backbone.layers[:-trainable_layers]:
+            layer.trainable = False
+
+    x = backbone(x)
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dropout(0.35)(x)
+    x = layers.Dense(256, activation='relu')(x)
+    x = layers.Dropout(0.25)(x)
+    output = layers.Dense(num_classes, activation='softmax', name='classification_output')(x)
+
+    return models.Model(inputs=img_input, outputs=output)
+
+
 def augment_image(image):
     """Apply aggressive data augmentation to an image"""
     import random
@@ -279,7 +426,116 @@ def load_images_from_directory(directory, target_size=(IMG_SIZE, IMG_SIZE), augm
     return np.array(images), np.array(texture_features), np.array(labels), class_names
 
 
-def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multiplier=1):
+def load_images_from_file_list(file_paths, labels, target_size=(IMG_SIZE, IMG_SIZE), augment_multiplier=1):
+    images = []
+    texture_features = []
+    out_labels = []
+
+    for img_path, lbl in zip(file_paths, labels):
+        try:
+            img_bgr = cv2.imread(img_path)
+            if img_bgr is None:
+                continue
+            img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+            img_resized = cv2.resize(img_rgb, target_size)
+
+            texture_feat = extract_texture_features(img_resized)
+            images.append(img_resized)
+            texture_features.append(texture_feat)
+            out_labels.append(lbl)
+
+            for _ in range(max(0, augment_multiplier - 1)):
+                aug_img = augment_image(img_resized)
+                aug_texture = extract_texture_features(aug_img)
+                images.append(aug_img)
+                texture_features.append(aug_texture)
+                out_labels.append(lbl)
+        except Exception as e:
+            print(f"Error loading {img_path}: {e}")
+            continue
+
+    return np.array(images), np.array(texture_features), np.array(out_labels)
+
+
+def _write_history_csv(history, output_dir, model_name):
+    keys = list(history.history.keys())
+    csv_path = os.path.join(output_dir, f'{model_name}_training_log.csv')
+    epochs = len(history.history.get(keys[0], [])) if keys else 0
+    with open(csv_path, 'w', encoding='utf-8') as f:
+        f.write('epoch,' + ','.join(keys) + '\n')
+        for i in range(epochs):
+            row = [str(i)]
+            for k in keys:
+                v = history.history.get(k, [])
+                row.append(str(v[i]) if i < len(v) else '')
+            f.write(','.join(row) + '\n')
+    return csv_path
+
+
+def _save_confusion_and_report(y_true, y_pred, labels, output_dir, model_name, title_suffix=''):
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    report = classification_report(y_true, y_pred, labels=labels, zero_division=0)
+    acc = float((np.array(y_true) == np.array(y_pred)).mean()) if len(y_true) else 0.0
+
+    report_path = os.path.join(output_dir, f'{model_name}_classification_report.txt')
+    with open(report_path, 'w', encoding='utf-8') as f:
+        f.write(report)
+
+    json_path = os.path.join(output_dir, f'{model_name}_test_report.json')
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(
+            {
+                'accuracy': acc,
+                'labels': labels,
+                'confusion_matrix': cm.tolist(),
+                'classification_report': report,
+            },
+            f,
+            indent=2,
+        )
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(cm, cmap='Blues')
+    ax.set_xticks(range(len(labels)))
+    ax.set_yticks(range(len(labels)))
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.set_yticklabels(labels)
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('True')
+    title = f'{model_name} Confusion Matrix'
+    if title_suffix:
+        title += f' ({title_suffix})'
+    title += f'  Acc: {acc*100:.2f}%'
+    ax.set_title(title)
+
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, str(cm[i, j]), ha='center', va='center', fontsize=9, color='black')
+
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    fig.tight_layout()
+    cm_path = os.path.join(output_dir, f'{model_name}_confusion_matrix.png')
+    fig.savefig(cm_path, dpi=160)
+    plt.close(fig)
+
+    return acc, report_path, cm_path, json_path
+
+
+def train_model(
+    dataset_path,
+    output_dir,
+    model_name,
+    epochs=50,
+    augment_multiplier=1,
+    use_pretrained_backbone=True,
+    trainable_layers=30,
+    use_class_weights=True,
+    label_smoothing=0.05,
+    use_texture_features=True,
+    backbone_name='efficientnetv2b0',
+    val_size=0.15,
+    test_size=0.15,
+):
     """Train the custom CNN model with texture features"""
     
     print(f"\n{'='*60}")
@@ -289,56 +545,161 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # Load training data
-    train_dir = os.path.join(dataset_path, 'TRAIN')
-    if not os.path.exists(train_dir):
-        # If no TRAIN folder, use the dataset_path directly
-        train_dir = dataset_path
-    
-    X_images, X_texture, y, class_names = load_images_from_directory(
-        train_dir, augment_multiplier=augment_multiplier
-    )
-    
-    print(f"\nDataset loaded:")
-    print(f"  Images shape: {X_images.shape}")
-    print(f"  Texture features shape: {X_texture.shape}")
-    print(f"  Labels: {len(y)}")
-    print(f"  Classes: {class_names}")
-    
-    # Encode labels
-    label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(y)
-    y_categorical = keras.utils.to_categorical(y_encoded)
-    
-    # Save class names
+    dataset_dir = Path(dataset_path)
+    candidate_train_dirs = ['TRAIN', 'Train', 'train']
+    candidate_test_dirs = ['TEST', 'Test', 'test']
+
+    split_train_dir = None
+    split_test_dir = None
+    for name in candidate_train_dirs:
+        p = dataset_dir / name
+        if p.exists() and p.is_dir():
+            split_train_dir = p
+            break
+    for name in candidate_test_dirs:
+        p = dataset_dir / name
+        if p.exists() and p.is_dir():
+            split_test_dir = p
+            break
+
+    if split_train_dir is not None:
+        train_dir = str(split_train_dir)
+        X_images, X_texture, y, class_names = load_images_from_directory(
+            train_dir, augment_multiplier=augment_multiplier
+        )
+        if not use_texture_features:
+            X_texture = np.zeros((len(X_images), 1), dtype=np.float32)
+        y_canonical = np.array([canonicalize_class_name(lbl) for lbl in y])
+        label_encoder = LabelEncoder()
+        y_encoded = label_encoder.fit_transform(y_canonical)
+        y_categorical = keras.utils.to_categorical(y_encoded)
+
+        X_train_img, X_val_img, X_train_tex, X_val_tex, y_train, y_val = train_test_split(
+            X_images, X_texture, y_categorical, test_size=val_size, random_state=42, stratify=y_encoded
+        )
+
+        X_test_img = None
+        X_test_tex = None
+        y_test = None
+        if split_test_dir is not None:
+            test_dir = str(split_test_dir)
+            X_test_img, X_test_tex, y_test_labels, _ = load_images_from_directory(
+                test_dir, augment_multiplier=1
+            )
+            y_test_canonical = np.array([canonicalize_class_name(lbl) for lbl in y_test_labels])
+            y_test_encoded = label_encoder.transform(y_test_canonical)
+            y_test = keras.utils.to_categorical(y_test_encoded, num_classes=len(label_encoder.classes_))
+    else:
+        file_paths = []
+        labels = []
+        for class_dir in sorted([p for p in dataset_dir.iterdir() if p.is_dir()]):
+            class_name = canonicalize_class_name(class_dir.name)
+            for f in class_dir.iterdir():
+                if f.is_file() and f.suffix.lower() in ['.jpg', '.jpeg', '.png']:
+                    file_paths.append(str(f))
+                    labels.append(class_name)
+
+        if len(file_paths) == 0:
+            raise Exception(f'No images found under {dataset_dir}')
+
+        label_encoder = LabelEncoder()
+        y_encoded_all = label_encoder.fit_transform(labels)
+        y_categorical_all = keras.utils.to_categorical(y_encoded_all)
+
+        train_paths, temp_paths, y_train_idx, y_temp_idx = train_test_split(
+            file_paths,
+            y_encoded_all,
+            test_size=(val_size + test_size),
+            random_state=42,
+            stratify=y_encoded_all,
+        )
+        val_ratio = val_size / (val_size + test_size)
+        val_paths, test_paths, y_val_idx, y_test_idx = train_test_split(
+            temp_paths,
+            y_temp_idx,
+            test_size=(1 - val_ratio),
+            random_state=42,
+            stratify=y_temp_idx,
+        )
+
+        y_train_labels = [label_encoder.classes_[i] for i in y_train_idx]
+        y_val_labels = [label_encoder.classes_[i] for i in y_val_idx]
+        y_test_labels = [label_encoder.classes_[i] for i in y_test_idx]
+
+        X_train_img, X_train_tex, y_train_labels = load_images_from_file_list(
+            train_paths, y_train_labels, augment_multiplier=augment_multiplier
+        )
+        X_val_img, X_val_tex, y_val_labels = load_images_from_file_list(
+            val_paths, y_val_labels, augment_multiplier=1
+        )
+        X_test_img, X_test_tex, y_test_labels = load_images_from_file_list(
+            test_paths, y_test_labels, augment_multiplier=1
+        )
+
+        y_train = keras.utils.to_categorical(label_encoder.transform(y_train_labels), num_classes=len(label_encoder.classes_))
+        y_val = keras.utils.to_categorical(label_encoder.transform(y_val_labels), num_classes=len(label_encoder.classes_))
+        y_test = keras.utils.to_categorical(label_encoder.transform(y_test_labels), num_classes=len(label_encoder.classes_))
+
+        if not use_texture_features:
+            X_train_tex = np.zeros((len(X_train_img), 1), dtype=np.float32)
+            X_val_tex = np.zeros((len(X_val_img), 1), dtype=np.float32)
+            X_test_tex = np.zeros((len(X_test_img), 1), dtype=np.float32)
+
+        class_names = list(label_encoder.classes_)
+
     class_mapping = {i: name for i, name in enumerate(label_encoder.classes_)}
     with open(os.path.join(output_dir, f'{model_name}_classes.json'), 'w') as f:
         json.dump(class_mapping, f, indent=2)
     
-    # Split data
-    X_train_img, X_val_img, X_train_tex, X_val_tex, y_train, y_val = train_test_split(
-        X_images, X_texture, y_categorical, test_size=0.2, random_state=42, stratify=y_encoded
-    )
+    print(f"\nDataset loaded:")
+    print(f"  Training samples: {len(X_train_img)}")
+    print(f"  Validation samples: {len(X_val_img)}")
+    if X_test_img is not None:
+        print(f"  Test samples: {len(X_test_img)}")
+    print(f"  Classes: {list(label_encoder.classes_)}")
     
     print(f"\nTrain/Val split:")
     print(f"  Training samples: {len(X_train_img)}")
     print(f"  Validation samples: {len(X_val_img)}")
     
     # Build model
-    texture_feature_size = X_texture.shape[1]
-    num_classes = len(class_names)
+    texture_feature_size = X_train_tex.shape[1] if use_texture_features else 1
+    num_classes = len(label_encoder.classes_)
     
-    model = build_depthwise_separable_cnn(
-        input_shape=(IMG_SIZE, IMG_SIZE, 3),
-        texture_feature_size=texture_feature_size,
-        num_classes=num_classes
-    )
+    if use_pretrained_backbone and not use_texture_features:
+        model = build_image_only_backbone_classifier(
+            input_shape=(IMG_SIZE, IMG_SIZE, 3),
+            num_classes=num_classes,
+            backbone_name=backbone_name,
+            trainable_layers=trainable_layers,
+        )
+    elif use_pretrained_backbone and use_texture_features:
+        if backbone_name.lower() in ('efficientnetv2b0', 'effnetv2b0'):
+            model = build_efficientnetv2b0_fusion(
+                input_shape=(IMG_SIZE, IMG_SIZE, 3),
+                texture_feature_size=texture_feature_size,
+                num_classes=num_classes,
+                trainable_layers=trainable_layers,
+            )
+        else:
+            model = build_mobilenetv2_fusion(
+                input_shape=(IMG_SIZE, IMG_SIZE, 3),
+                texture_feature_size=texture_feature_size,
+                num_classes=num_classes,
+                trainable_layers=trainable_layers,
+            )
+    else:
+        model = build_depthwise_separable_cnn(
+            input_shape=(IMG_SIZE, IMG_SIZE, 3),
+            texture_feature_size=texture_feature_size,
+            num_classes=num_classes
+        )
     
     # Compile model
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate=0.001),
-        loss='categorical_crossentropy',
-        metrics=['accuracy', keras.metrics.TopKCategoricalAccuracy(k=3, name='top_3_accuracy')]
+        loss=keras.losses.CategoricalCrossentropy(label_smoothing=label_smoothing),
+        metrics=['accuracy', keras.metrics.TopKCategoricalAccuracy(k=min(3, num_classes), name='top_3_accuracy')],
     )
     
     # Print model summary
@@ -350,7 +711,7 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
     print(f"\nTotal parameters: {total_params:,}")
     print(f"Estimated model size: ~{total_params * 4 / (1024*1024):.2f} MB")
     
-    # Callbacks (removed ModelCheckpoint due to h5py permission issues on macOS)
+    # Callbacks
     callbacks = [
         keras.callbacks.EarlyStopping(
             monitor='val_loss',
@@ -365,32 +726,80 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
             min_lr=1e-7,
             verbose=1
         ),
-        keras.callbacks.CSVLogger(
-            os.path.join(output_dir, f'{model_name}_training_log.csv')
-        )
     ]
     
     # Train model
     print(f"\nStarting training for {epochs} epochs...")
-    history = model.fit(
-        [X_train_img, X_train_tex],
+    train_inputs = [X_train_img, X_train_tex] if use_texture_features else X_train_img
+    val_inputs = ([X_val_img, X_val_tex], y_val) if use_texture_features else (X_val_img, y_val)
+
+    class_weight = None
+    if use_class_weights:
+        y_train_idx = np.argmax(y_train, axis=1)
+        classes, counts = np.unique(y_train_idx, return_counts=True)
+        total = counts.sum()
+        class_weight = {int(c): float(total / (len(classes) * cnt)) for c, cnt in zip(classes, counts)}
+
+    def _set_backbone_trainable(model, trainable, trainable_layers=None):
+        for layer in model.layers:
+            if isinstance(layer, keras.Model):
+                name = layer.name.lower()
+                if 'efficientnet' in name or 'mobilenet' in name:
+                    if not trainable:
+                        layer.trainable = False
+                    else:
+                        layer.trainable = True
+                        if trainable_layers is not None:
+                            for sub in layer.layers[:-trainable_layers]:
+                                sub.trainable = False
+
+    if use_pretrained_backbone:
+        _set_backbone_trainable(model, False)
+
+    print("\nStage 1: training head (frozen backbone)")
+    history1 = model.fit(
+        train_inputs,
+        y_train,
+        batch_size=BATCH_SIZE,
+        epochs=max(5, int(epochs * 0.6)),
+        validation_data=val_inputs,
+        callbacks=callbacks,
+        class_weight=class_weight,
+        verbose=1,
+    )
+
+    print("\nStage 2: fine-tuning (lower LR)")
+    if use_pretrained_backbone:
+        _set_backbone_trainable(model, True, trainable_layers=trainable_layers)
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=0.0001),
+        loss=keras.losses.CategoricalCrossentropy(label_smoothing=label_smoothing),
+        metrics=['accuracy', keras.metrics.TopKCategoricalAccuracy(k=min(3, num_classes), name='top_3_accuracy')],
+    )
+    history2 = model.fit(
+        train_inputs,
         y_train,
         batch_size=BATCH_SIZE,
         epochs=epochs,
-        validation_data=([X_val_img, X_val_tex], y_val),
+        initial_epoch=len(history1.history['loss']),
+        validation_data=val_inputs,
         callbacks=callbacks,
-        verbose=1
+        class_weight=class_weight,
+        verbose=1,
     )
+
+    history = _merge_histories(history1, history2)
     
     # Evaluate model
     print("\n" + "="*60)
     print("Final Evaluation on Validation Set")
     print("="*60)
     
+    eval_inputs = [X_val_img, X_val_tex] if use_texture_features else X_val_img
     val_loss, val_accuracy, val_top3 = model.evaluate(
-        [X_val_img, X_val_tex],
+        eval_inputs,
         y_val,
-        verbose=0
+        verbose=0,
     )
     
     print(f"Validation Loss: {val_loss:.4f}")
@@ -399,6 +808,35 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
     
     # Plot training history
     plot_training_history(history, output_dir, model_name)
+    _write_history_csv(history, output_dir, model_name)
+
+    test_acc = None
+    if X_test_img is not None and y_test is not None:
+        test_inputs = [X_test_img, X_test_tex] if use_texture_features else X_test_img
+        test_loss, test_accuracy, test_top3 = model.evaluate(test_inputs, y_test, verbose=0)
+        print("\n" + "="*60)
+        print("Final Evaluation on Test Set")
+        print("="*60)
+        print(f"Test Loss: {test_loss:.4f}")
+        print(f"Test Accuracy: {test_accuracy:.4f} ({test_accuracy*100:.2f}%)")
+        print(f"Test Top-3 Accuracy: {test_top3:.4f} ({test_top3*100:.2f}%)")
+
+        y_true_idx = np.argmax(y_test, axis=1)
+        y_true_labels = [label_encoder.classes_[i] for i in y_true_idx]
+        y_pred_probs = model.predict(test_inputs, verbose=0)
+        y_pred_idx = np.argmax(y_pred_probs, axis=1)
+        y_pred_labels = [label_encoder.classes_[i] for i in y_pred_idx]
+        test_acc, report_path, cm_path, json_path = _save_confusion_and_report(
+            y_true_labels,
+            y_pred_labels,
+            list(label_encoder.classes_),
+            output_dir,
+            model_name,
+            title_suffix='TEST',
+        )
+        print(f"✓ Test confusion matrix saved: {cm_path}")
+        print(f"✓ Test classification report saved: {report_path}")
+        print(f"✓ Test report JSON saved: {json_path}")
     
     # Convert to TFLite
     print("\n" + "="*60)
@@ -434,13 +872,21 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
         tflite_size_mb = 0.0
     
     # Save metadata
+    architecture = (
+        f'{backbone_name} Image-Only Classifier'
+        if use_pretrained_backbone and not use_texture_features
+        else f'{backbone_name} + Texture Feature Fusion'
+        if use_pretrained_backbone and use_texture_features
+        else 'Custom Depthwise-Separable CNN + Texture Feature Fusion'
+    )
+
     metadata = {
         'model_name': model_name,
-        'architecture': 'Custom Depthwise-Separable CNN + Texture Feature Fusion',
+        'architecture': architecture,
         'input_size': IMG_SIZE,
         'num_classes': num_classes,
         'classes': class_mapping,
-        'texture_feature_size': int(texture_feature_size),
+        'texture_feature_size': int(texture_feature_size) if use_texture_features else 0,
         'training_samples': int(len(X_train_img)),
         'validation_samples': int(len(X_val_img)),
         'total_params': int(total_params),
@@ -448,6 +894,10 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
         'final_accuracy': float(val_accuracy),
         'final_top3_accuracy': float(val_top3),
         'epochs_trained': len(history.history['loss']),
+        'test_accuracy': float(test_acc) if test_acc is not None else None,
+        'label_smoothing': float(label_smoothing),
+        'class_weights': bool(use_class_weights),
+        'use_texture_features': bool(use_texture_features),
         'glcm_params': {
             'distances': GLCM_DISTANCES,
             'properties': GLCM_PROPERTIES
@@ -465,6 +915,20 @@ def train_model(dataset_path, output_dir, model_name, epochs=50, augment_multipl
     print(f"✓ Models saved to: {output_dir}")
     
     return history, model
+
+
+class _MergedHistory:
+    def __init__(self, history):
+        self.history = history
+
+
+def _merge_histories(h1, h2):
+    merged = {}
+    for k, v in (h1.history or {}).items():
+        merged[k] = list(v)
+    for k, v in (h2.history or {}).items():
+        merged[k] = merged.get(k, []) + list(v)
+    return _MergedHistory(merged)
 
 
 def plot_training_history(history, output_dir, model_name):

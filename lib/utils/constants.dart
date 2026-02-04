@@ -135,9 +135,10 @@ class AppConstants {
   ];
 
   // Model Configuration
-  static const String wasteModelPath = 'assets/models/waste_classifier.tflite';
-  static const String soilModelPath = 'assets/models/soil_classifier.tflite';
+  static const String wasteModelPath = 'assets/models/waste_classifier_model.tflite';
+  static const String soilModelPath = 'assets/models/soil_classifier_model.tflite';
   static const int modelInputSize = 224; // MobileNetV2 standard input size
+  static const String webInferenceBaseUrl = 'http://127.0.0.1:8000';
 
   // Colors (defined in theme.dart but referenced here)
   static const Color primaryGreen = Color(0xFF4CAF50);

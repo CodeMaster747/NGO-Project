@@ -1,9 +1,14 @@
 import 'dart:math';
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../models/soil_result.dart';
 import '../../utils/constants.dart';
 import 'tflite_service.dart';
 import 'image_preprocessor.dart';
+import 'texture_feature_extractor.dart';
+import 'remote_inference_service.dart';
 
 /// Service for classifying soil using MobileNetV2 CNN model
 /// Handles image preprocessing, inference, and result interpretation
@@ -15,6 +20,9 @@ class SoilClassifier {
 
   final TFLiteService _tfliteService = TFLiteService();
   final ImagePreprocessor _preprocessor = ImagePreprocessor();
+  final TextureFeatureExtractor _textureExtractor = TextureFeatureExtractor();
+  final RemoteInferenceService _remoteInference = RemoteInferenceService();
+  List<String>? _modelLabels;
 
   /// Classify soil from image bytes with optional location data
   /// Returns SoilResult with soil type and confidence
@@ -24,40 +32,32 @@ class SoilClassifier {
     double? latitude,
     double? longitude,
   }) async {
-    try {
-      // Load model if not already loaded
-      bool modelLoaded = _tfliteService.isSoilModelLoaded;
-      if (!modelLoaded) {
-        modelLoaded = await _tfliteService.loadSoilModel();
-      }
-
-      // If model exists, use it for inference
-      if (modelLoaded) {
-        return await _classifyWithModel(
-          imageBytes,
-          location: location,
-          latitude: latitude,
-          longitude: longitude,
-        );
-      } else {
-        // Fallback to placeholder logic if model doesn't exist
-        return _classifyWithPlaceholder(
-          imageBytes,
-          location: location,
-          latitude: latitude,
-          longitude: longitude,
-        );
-      }
-    } catch (e) {
-      print('Error classifying soil: $e');
-      // Return placeholder result on error
-      return _classifyWithPlaceholder(
-        imageBytes,
+    if (kIsWeb) {
+      final remote = await _remoteInference.predictSoil(imageBytes);
+      return SoilResult(
+        soilType: remote.label.isNotEmpty ? remote.label : 'Unknown',
+        confidence: remote.confidence,
         location: location,
         latitude: latitude,
         longitude: longitude,
       );
     }
+
+    bool modelLoaded = _tfliteService.isSoilModelLoaded;
+    if (!modelLoaded) {
+      modelLoaded = await _tfliteService.loadSoilModel();
+    }
+
+    if (!modelLoaded) {
+      throw Exception('Soil model could not be loaded');
+    }
+
+    return await _classifyWithModel(
+      imageBytes,
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 
   /// Classify using actual TFLite model
@@ -67,14 +67,20 @@ class SoilClassifier {
     double? latitude,
     double? longitude,
   }) async {
-    // Preprocess image
+    final labels = await _loadModelLabels();
+
     final input = await _preprocessor.preprocessImage(
       imageBytes,
       AppConstants.modelInputSize,
     );
 
-    // Run inference
-    final output = await _tfliteService.runSoilInference(input);
+    final texture = await _textureExtractor.extractFeatures(
+      imageBytes,
+      AppConstants.modelInputSize,
+    );
+
+    final output =
+        await _tfliteService.runSoilInference(input, textureInput: texture);
 
     // Find category with highest confidence
     int maxIndex = 0;
@@ -86,8 +92,7 @@ class SoilClassifier {
       }
     }
 
-    // Map index to soil type
-    String soilType = AppConstants.soilTypes[maxIndex];
+    final soilType = maxIndex < labels.length ? labels[maxIndex] : labels.first;
 
     return SoilResult(
       soilType: soilType,
@@ -98,21 +103,16 @@ class SoilClassifier {
     );
   }
 
-  /// Placeholder classification logic when model is not available
-  /// Uses random classification for demonstration purposes
-  SoilResult _classifyWithPlaceholder(
+  Future<SoilResult> _classifyWithPlaceholder(
     Uint8List imageBytes, {
     String? location,
     double? latitude,
     double? longitude,
-  }) {
-    print('Using placeholder soil classification');
-    
-    // Generate random soil type for demonstration
+  }) async {
+    final labels = await _loadModelLabels();
     final random = Random();
-    final soilTypes = AppConstants.soilTypes;
-    final soilType = soilTypes[random.nextInt(soilTypes.length)];
-    
+    final soilType = labels[random.nextInt(labels.length)];
+
     // Random confidence between 0.7 and 0.95
     final confidence = 0.7 + (random.nextDouble() * 0.25);
 
@@ -123,5 +123,25 @@ class SoilClassifier {
       latitude: latitude,
       longitude: longitude,
     );
+  }
+
+  Future<List<String>> _loadModelLabels() async {
+    final cached = _modelLabels;
+    if (cached != null && cached.isNotEmpty) return cached;
+
+    final jsonString = await rootBundle
+        .loadString('assets/models/soil_classifier_classes.json');
+    final decoded = json.decode(jsonString);
+    if (decoded is! Map) {
+      throw Exception('Invalid soil classes JSON');
+    }
+
+    final entries = decoded.entries
+        .map((e) => MapEntry(int.parse(e.key.toString()), e.value.toString()))
+        .toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    _modelLabels = entries.map((e) => e.value).toList();
+    return _modelLabels!;
   }
 }
