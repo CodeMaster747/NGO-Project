@@ -53,5 +53,11 @@
 	<!-- Location Permission -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need your location to recommend plants suitable for your region</string>
+	<!-- Allow local HTTP inference server access during development -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

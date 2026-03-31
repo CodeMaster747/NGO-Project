@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -29,19 +28,25 @@ class WasteClassifier {
   /// Classify waste from image bytes
   /// Returns WasteResult with category, confidence, and instructions
   Future<WasteResult> classifyWaste(Uint8List imageBytes) async {
-    if (kIsWeb) {
-      final remote = await _remoteInference.predictWaste(imageBytes);
-      final category = _mapModelLabelToWasteCategory(remote.label);
-      String instructions = AppConstants.disposalInstructions[category] ??
-          'Please dispose of this waste properly.';
-      String tip = _gamification.getRandomTip(category);
-      return WasteResult(
-        category: category,
-        confidence: remote.confidence,
-        disposalInstructions: instructions,
-        environmentalTip: tip,
-        pointsAwarded: AppConstants.pointsPerWasteScan,
-      );
+    final shouldUseRemote = kIsWeb || AppConstants.preferRemoteInferenceOnMobile;
+
+    if (shouldUseRemote) {
+      try {
+        final remote = await _remoteInference.predictWaste(imageBytes);
+        final category = _mapModelLabelToWasteCategory(remote.label);
+        String instructions = AppConstants.disposalInstructions[category] ??
+            'Please dispose of this waste properly.';
+        String tip = _gamification.getRandomTip(category);
+        return WasteResult(
+          category: category,
+          confidence: remote.confidence,
+          disposalInstructions: instructions,
+          environmentalTip: tip,
+          pointsAwarded: AppConstants.pointsPerWasteScan,
+        );
+      } catch (_) {
+        if (kIsWeb) rethrow;
+      }
     }
 
     bool modelLoaded = _tfliteService.isWasteModelLoaded;

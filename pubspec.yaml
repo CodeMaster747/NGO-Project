@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # ML and Image Processing
-  tflite_flutter: ^0.10.4
+  tflite_flutter: ^0.11.0
   image: ^4.1.7
   
   # Camera and Gallery

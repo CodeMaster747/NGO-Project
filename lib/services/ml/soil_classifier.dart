@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../models/soil_result.dart';
@@ -32,15 +31,21 @@ class SoilClassifier {
     double? latitude,
     double? longitude,
   }) async {
-    if (kIsWeb) {
-      final remote = await _remoteInference.predictSoil(imageBytes);
-      return SoilResult(
-        soilType: remote.label.isNotEmpty ? remote.label : 'Unknown',
-        confidence: remote.confidence,
-        location: location,
-        latitude: latitude,
-        longitude: longitude,
-      );
+    final shouldUseRemote = kIsWeb || AppConstants.preferRemoteInferenceOnMobile;
+
+    if (shouldUseRemote) {
+      try {
+        final remote = await _remoteInference.predictSoil(imageBytes);
+        return SoilResult(
+          soilType: remote.label.isNotEmpty ? remote.label : 'Unknown',
+          confidence: remote.confidence,
+          location: location,
+          latitude: latitude,
+          longitude: longitude,
+        );
+      } catch (_) {
+        if (kIsWeb) rethrow;
+      }
     }
 
     bool modelLoaded = _tfliteService.isSoilModelLoaded;
